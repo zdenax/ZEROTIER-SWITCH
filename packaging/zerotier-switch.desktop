@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=ZeroTier Switch
+Comment=Zapínání a vypínání ZeroTier sítí
+Exec=zerotier-switch
+Icon=network-wired
+Categories=Network;Utility;
+Terminal=false
+StartupNotify=true
