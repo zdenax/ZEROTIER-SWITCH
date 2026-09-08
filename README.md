@@ -15,8 +15,14 @@ Umožňuje:
 
 ## Screenshot
 
+![ZeroTier Switch](docs/screenshot.png)
+
 Design v barvách ZeroTier (oranžová/navy), stavové ikony zelená/červená
 podle klasické konvence připojeno/odpojeno.
+
+> Skutečný screenshot z běžící aplikace — jména sítí, Network ID a IP
+> adresy jsou na obrázku začerněné (soukromé sítě autora), zbytek UI je
+> beze změny.
 
 ## Jak to funguje
 
