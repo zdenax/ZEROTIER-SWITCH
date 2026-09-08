@@ -106,3 +106,7 @@ Appka se pak objeví v App menu jako **ZeroTier Switch**.
   akce vyžadující root a jde vždy přes `pkexec` s heslem správce.
 - Helper skript striktně validuje, že se dá měnit jen rozhraní se
   jménem `zt*` — nelze jej zneužít na jiná síťová rozhraní v systému.
+
+## Licence
+
+MIT — viz [LICENSE](LICENSE). Volně k použití a úpravám.
