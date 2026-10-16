@@ -87,15 +87,19 @@ ZOOM_LEVELS = [0.8, 0.9, 1.0, 1.1, 1.25, 1.4, 1.6]
 def load_state():
     try:
         with open(STATE_PATH) as f:
-            return json.load(f)
+            state = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
+    return state if isinstance(state, dict) else {}
 
 
 def save_state(state):
     os.makedirs(os.path.dirname(STATE_PATH), exist_ok=True)
-    with open(STATE_PATH, "w") as f:
+    tmp = STATE_PATH + ".tmp"
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
         json.dump(state, f)
+    os.replace(tmp, STATE_PATH)
 
 
 def fmt_duration(seconds):
@@ -155,7 +159,8 @@ class NetworkRow(Adw.ActionRow):
         self.dev = nwinfo["portDeviceName"] or nwinfo.get("dev", "")
 
         self.add_css_class("zt-row")
-        self.set_title(GLib.markup_escape_text(nwinfo["name"] or self.nwid))
+        self.raw_name = nwinfo["name"] or self.nwid
+        self.set_title(GLib.markup_escape_text(self.raw_name))
         self.set_subtitle(f'<span font_family="monospace">{GLib.markup_escape_text(self.nwid)}</span>')
         self.set_subtitle_lines(1)
 
@@ -260,7 +265,7 @@ class NetworkRow(Adw.ActionRow):
         return True  # we'll set real state on next refresh
 
     def on_leave_clicked(self, button):
-        name = self.get_title() or self.nwid
+        name = self.raw_name
         dialog = Adw.AlertDialog(
             heading="Odebrat síť?",
             body=f"Opustíš síť „{name}“ ({self.nwid}). Pro opětovné připojení "
@@ -428,6 +433,7 @@ class ZTSwitchApp(Adw.Application):
     def __init__(self):
         super().__init__(application_id="com.zdenek.ZerotierSwitch")
         self.state = load_state()
+        self._saved_state = json.loads(json.dumps(self.state))
         self.rows = {}
         self.win = None
         self.zoom_index = ZOOM_LEVELS.index(1.0)
@@ -493,7 +499,20 @@ class ZTSwitchApp(Adw.Application):
         return False
 
     def refresh(self):
-        networks = get_networks()
+        # zerotier-cli can hang for seconds; keep it off the GTK main thread.
+        if getattr(self, "_refreshing", False):
+            return False
+        self._refreshing = True
+
+        def fetch():
+            networks = get_networks()
+            GLib.idle_add(self._apply_networks, networks)
+
+        self.run_async(fetch)
+        return False
+
+    def _apply_networks(self, networks):
+        self._refreshing = False
         listbox = self.win.listbox
 
         if networks is None:
@@ -529,7 +548,9 @@ class ZTSwitchApp(Adw.Application):
         total = len(networks)
         self.win.title_widget.set_subtitle(f"{connected}/{total} připojeno")
 
-        save_state(self.state)
+        if self.state != self._saved_state:
+            save_state(self.state)
+            self._saved_state = json.loads(json.dumps(self.state))
         return False
 
     def _show_empty(self, empty):

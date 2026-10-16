@@ -69,9 +69,15 @@ sudo install -m 755 -o root -g root packaging/zerotier-toggle-helper \
     /usr/local/bin/zerotier-toggle-helper
 ```
 
+```bash
+sudo install -m 644 -o root -g root packaging/cz.zerotier-switch.toggle.policy \
+    /usr/share/polkit-1/actions/
+```
+
 Skript validuje vstup (`zt*` rozhraní, jen `up`/`down`) a přes `pkexec`
 se pouští s heslem správce — hlídá se jen při přepnutí, čtení stavu
-heslo nevyžaduje.
+heslo nevyžaduje. Polkit akce `cz.zerotier-switch.toggle` zobrazí srozumitelnou
+výzvu místo obecného dialogu.
 
 ### 3. Nainstalovat appku a launcher
 
@@ -80,15 +86,11 @@ mkdir -p ~/.local/share/zerotier-switch
 cp main.py ~/.local/share/zerotier-switch/
 
 mkdir -p ~/.local/bin
-cat > ~/.local/bin/zerotier-switch <<EOF
-#!/bin/bash
-exec sg zerotier-one -c "exec python3 \$HOME/.local/share/zerotier-switch/main.py"
-EOF
-chmod +x ~/.local/bin/zerotier-switch
+install -m 755 packaging/zerotier-switch ~/.local/bin/zerotier-switch
 
 mkdir -p ~/.local/share/applications
 cp packaging/zerotier-switch.desktop ~/.local/share/applications/
-sed -i "s#Exec=zerotier-switch#Exec=$HOME/.local/bin/zerotier-switch#" \
+sed -i "s#^Exec=zerotier-switch#Exec=\"$HOME/.local/bin/zerotier-switch\"#" \
     ~/.local/share/applications/zerotier-switch.desktop
 update-desktop-database ~/.local/share/applications/
 ```

@@ -1,0 +1,3 @@
+#!/bin/bash
+# $HOME is expanded by the inner shell started by sg, and kept quoted there.
+exec sg zerotier-one -c 'exec python3 "$HOME/.local/share/zerotier-switch/main.py"'
